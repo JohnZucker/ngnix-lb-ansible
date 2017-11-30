@@ -1,0 +1,10 @@
+# Prereq: _Ensure that workstation has defined credentials for all accounts in which resources are created_
+
+- name: create environment VPC stack for ngnix_lb_example
+  hosts: local
+  vars:
+    stack_state: present
+  roles:
+    - { role: network }
+    - { role: buckets }
+    - { role: security }

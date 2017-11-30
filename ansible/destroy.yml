@@ -1,0 +1,11 @@
+- name: destroy complete VPC stack for store
+  hosts: local
+  vars:
+      stack_state: absent
+  roles:
+    - { role: security }
+    - { role: buckets }
+    - { role: network }
+
+
+
