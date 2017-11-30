@@ -1,0 +1,25 @@
+stage: "test"
+aws_account_profile: "ngnix_lb_example"     # profile must exist on infrastructure deployer's workstation
+aws_account_id: "763504372141"              # turn into a secret or delete this account after use
+
+# Vpc subnets - Minimum 2 zones
+
+# CONSTRAINT (1) - All Vpcs for the stage are in the same AWS region defined in this inventory
+# CONSTRAINT (2) - Distinct Vpcs must not overlap CIDRs - Should be respected across all accounts so as to be peering-capable
+# CONSTRAINT (3) - The aws_region should be the start string of every zone name and that zone should exist
+
+aws_region: "eu-west-1"
+
+ngnix_lb_deployment:
+  vpc_cidr: "10.82.0.0/16"
+  zones:
+    A:
+      name: "{{aws_region}}a"
+      subnets:
+        public: "10.82.5.0/24"
+        private: "10.82.0.0/24"
+    B:
+      name: "{{aws_region}}b"
+      subnets:
+        public: "10.82.7.0/24"
+        private: "10.82.2.0/24"
