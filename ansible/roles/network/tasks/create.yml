@@ -37,3 +37,10 @@
 #  delegate_to: localhost
 #  changed_when: False
 
+- name: set variables network_vpc network_cidr_for_vpc network_public_subnets network_private_subnets
+  set_fact:
+    network_vpc="{{cfn_network_results.stack_outputs.VPC}}"
+    network_cidr_for_vpc="{{cfn_network_results.stack_outputs.VPCCidr}}"
+    network_public_subnets="{{cfn_network_results.stack_outputs.PublicSubnets}}"
+    network_private_subnets="{{cfn_network_results.stack_outputs.PrivateSubnets}}"
+  changed_when: False
