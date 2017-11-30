@@ -1,0 +1,172 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Create group of one ngnix-supporting instances in public subnets and deploy ngnix to the running instance",
+  "Parameters": {
+    "KeyPairName": {
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "ngnix-with-lb-maintainer"
+    },
+    "AmazonImageId": {
+      "Type": "String",
+      "Description": "The id of the AMI used to create each application instance",
+      "AllowedPattern": "ami-[a-z0-9]*",
+      "MinLength": "12",
+      "ConstraintDescription": "Must be the id of an AMI available to this account"
+    },
+    "PublicSubnets": {
+      "Type": "CommaDelimitedList",
+      "Description": "List of subnets in the VPC to which application instances may reside",
+      "ConstraintDescription": "Requires list of subnets"
+    },
+    "InstanceType": {
+      "Description": "EC2 instance type for each application instance",
+      "Type": "String",
+      "Default": "t2.micro",
+      "AllowedValues": [
+        "t2.micro",
+        "t2.small",
+        "t2.medium",
+        "t2.large",
+        "m4.large",
+        "m4.xlarge",
+        "m4.2xlarge",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "c4.large",
+        "c4.xlarge",
+        "c4.2xlarge"
+      ],
+      "ConstraintDescription": "Current EC2 capacity from 1 vCPU up to 8 vCPU"
+    },
+    "VPC": {
+      "Type": "String",
+      "Description": "VPC in which security groups are defined",
+      "MinLength": "12",
+      "AllowedPattern": "vpc-[a-z0-9]*",
+      "ConstraintDescription": "Must be a vpc identifier"
+    },
+    "IngressSecurityCIDRRange": {
+      "Description": "Range to restrict the security group to",
+      "Type": "String"
+    },
+    "Stage": {
+      "Description": "Stage",
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "WebserverInstanceASG": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "VPCZoneIdentifier": {
+          "Ref": "PublicSubnets"
+        },
+        "LaunchConfigurationName": {
+          "Ref": "WebserverInstanceLaunchConfig"
+        },
+        "MinSize": "1",
+        "MaxSize": "1",
+        "DesiredCapacity": "1",
+        "Tags": [{
+          "Key": "Name",
+          "PropagateAtLaunch": "true",
+          "Value": {
+            "Fn::Join": [
+              "-", [{
+                  "Ref": "AWS::StackName"
+                },
+                "instance"
+              ]
+            ]
+          }
+        }]
+      }
+    },
+    "SecurityGroupAppInstance": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable ssh login for a private instance",
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupIngress": [{
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "8080",
+            "ToPort": "8080",
+            "CidrIp": {
+              "Ref": "IngressSecurityCIDRRange"
+            }
+          }
+        ],
+        "Tags": [{
+          "Key": "Name",
+          "Value": "app-access"
+        }]
+      }
+    },
+    "WebserverInstanceLaunchConfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "packages" : {
+              "yum" : { "nginx": [] } } }
+              }
+      },
+      "Properties": {
+        "ImageId": {
+          "Ref": "AmazonImageId"
+        },
+        "KeyName": {
+          "Ref": "KeyPairName"
+        },
+        "SecurityGroups": [{
+          "Ref": "SecurityGroupAppInstance"
+        }],
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+
+        "AssociatePublicIpAddress": "true",
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "", [
+                "#!/bin/bash -e\n",
+                 "/opt/aws/bin/cfn-init --stack ", { "Ref" : "AWS::StackId" }, " --region ", { "Ref" : "AWS::Region" }, " --resource WebserverInstanceLaunchConfig\n",
+                 "/sbin/service nginx start\n"
+              ]
+            ]
+          }
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "WebserverInstancesAutoScalingGroupId": {
+      "Value": {
+        "Ref": "WebserverInstanceASG"
+      },
+      "Description": "Auto-scaling-group id for application instance"
+    },
+    "AmazonImageId": {
+      "Value": {
+        "Ref": "AmazonImageId"
+      },
+      "Description": "Amazon image id for application instance"
+    },
+    "Stage": {
+      "Description": "The name of this stage",
+      "Value": {
+        "Ref": "Stage"
+      }
+    }
+  }
+}
