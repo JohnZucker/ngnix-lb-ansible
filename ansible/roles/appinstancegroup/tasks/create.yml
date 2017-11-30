@@ -1,0 +1,17 @@
+- name: launch app instance group for {{stage_access_name}} 
+  cloudformation:
+    profile: "{{aws_account_profile}}"
+    stack_name: "{{stage_access_name}}-app-instances"
+    state: "present"
+    region: "{{aws_region}}"
+    disable_rollback: true
+    template: "./roles/appinstancegroup/templates/appinstancegroup.template"
+    template_parameters:
+      AmazonImageId: "ami-7abd0209"
+      PrivateSubnets: "{{network_private_subnets}}"
+      InstanceType: "t2.micro"
+      VPC: "{{network_vpc}}"
+      IngressSecurityCIDRRange: "{{network_cidr_for_vpc}}"   # TODO - Lock down tighter to eligible SGs
+      Stage: "{{stage}}"
+      DesiredInstanceCount: 2
+  register: appinstancegroup_results

@@ -8,3 +8,4 @@
     - { role: network }
     - { role: buckets }
     - { role: security }
+    - { role: appinstancegroup }
