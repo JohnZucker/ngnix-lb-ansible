@@ -1,0 +1,169 @@
+{ "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Create group of application instances in private subnets equipped to run golang application",
+  "Parameters": {
+    "KeyPairName": {
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "ngnix-with-lb-maintainer"
+    },
+    "AmazonImageId": {
+      "Type": "String",
+      "Description": "The id of the AMI used to create each application instance",
+      "AllowedPattern": "ami-[a-z0-9]*",
+      "MinLength": "12",
+      "ConstraintDescription": "Must be the id of an AMI available to this account"
+    },
+    "PrivateSubnets": {
+      "Type": "CommaDelimitedList",
+      "Description": "List of subnets in the VPC to which application instances may reside",
+      "ConstraintDescription": "Requires list of subnets"
+    },
+    "InstanceType": {
+      "Description": "EC2 instance type for each application instance",
+      "Type": "String",
+      "Default": "t2.micro",
+      "AllowedValues": [
+        "t2.micro",
+        "t2.small",
+        "t2.medium",
+        "t2.large",
+        "m4.large",
+        "m4.xlarge",
+        "m4.2xlarge",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "c4.large",
+        "c4.xlarge",
+        "c4.2xlarge"
+      ],
+      "ConstraintDescription": "Current EC2 m type of capacity from 1 vCPU up to 8 vCPU"
+    },
+    "VPC": {
+      "Type": "String",
+      "Description": "VPC in which security groups are defined",
+      "MinLength": "12",
+      "AllowedPattern": "vpc-[a-z0-9]*",
+      "ConstraintDescription": "Must be a vpc identifier"
+    },
+    "IngressSecurityCIDRRange": {
+      "Description": "Range to restrict the security group to",
+      "Type": "String"
+    },
+    "Stage": {
+      "Description": "Stage",
+      "Type": "String"
+    },
+    "DesiredInstanceCount": {
+      "Description": "The positive number of app instances required in this group",
+      "Type": "Number",
+      "ConstraintDescription": "positive"
+    }
+  },
+  "Resources": {
+    "ApplicationInstanceASG": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "VPCZoneIdentifier": {
+          "Ref": "PrivateSubnets"
+        },
+        "LaunchConfigurationName": {
+          "Ref": "ApplicationInstanceLaunchConfig"
+        },
+        "MinSize": "1",
+        "MaxSize": { "Ref": "DesiredInstanceCount" },
+        "DesiredCapacity": { "Ref": "DesiredInstanceCount" },
+        "Tags": [{
+          "Key": "Name",
+          "PropagateAtLaunch": "true",
+          "Value": {
+            "Fn::Join": [
+              "-", [{
+                  "Ref": "AWS::StackName"
+                },
+                "instance"
+              ]
+            ]
+          }
+        }]
+      }
+    },
+    "SecurityGroupAppInstance": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable ssh login for a private instance",
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupIngress": [{
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": {
+              "Ref": "IngressSecurityCIDRRange"
+            }
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "8484",
+            "ToPort": "8484",
+            "CidrIp": {
+              "Ref": "IngressSecurityCIDRRange"
+            }
+          }
+        ],
+        "Tags": [{
+          "Key": "Name",
+          "Value": "app-access"
+        }]
+      }
+    },
+    "ApplicationInstanceLaunchConfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AmazonImageId"
+        },
+        "KeyName": {
+          "Ref": "KeyPairName"
+        },
+        "SecurityGroups": [{
+          "Ref": "SecurityGroupAppInstance"
+        }],
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+
+        "AssociatePublicIpAddress": "false",
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "\n", [
+                "#!/bin/bash -e",
+                "/bin/echo '#!/bin/bash' > /etc/profile.d/host-instance-customizations.sh"
+              ]
+            ]
+          }
+        }
+      }
+    }
+
+  },
+  "Outputs": {
+    "ApplicationInstancesAutoScalingGroupId": {
+      "Value": {
+        "Ref": "ApplicationInstanceASG"
+      },
+      "Description": "Auto-scaling-group id for application instance"
+    },
+    "AmazonImageId": {
+      "Value": {
+        "Ref": "AmazonImageId"
+      },
+      "Description": "Amazon image id for application instance"
+    },
+    "Stage": {
+      "Description": "The name of this stage",
+      "Value": { "Ref": "Stage" }
+    }
+  }
+}
