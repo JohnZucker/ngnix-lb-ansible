@@ -1,0 +1,5 @@
+- import_tasks: create.yml
+  when: stack_state == "present"
+
+- import_tasks: destroy.yml
+  when: stack_state == "absent"

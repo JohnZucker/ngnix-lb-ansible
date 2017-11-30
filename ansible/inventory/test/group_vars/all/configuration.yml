@@ -1,6 +1,6 @@
 stage: "test"
 aws_account_profile: "ngnix_lb_example"     # profile must exist on infrastructure deployer's workstation
-aws_account_id: "763504372141"              # turn into a secret or delete this account after use
+aws_account_id: "XXXXXXXXXX"              # turn into a secret or delete this account after use
 
 # Vpc subnets - Minimum 2 zones
 

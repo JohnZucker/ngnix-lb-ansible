@@ -1,0 +1,39 @@
+# Validate ansible-playbook is feasibly installed on this workstation
+
+- name: In order to make sure that ansible can proceed on this laptop, getting PYTHONPATH on the assumption that python3 is an OS executable
+  local_action: shell python3 -c 'import sys; import boto3; import botocore; print(":".join(sys.path))'
+  register: pythonpath
+
+- debug:
+    msg:
+      "INFO. Check that PYTHONPATH refers to python3 compatible ansible modules: {{pythonpath.stdout}}"
+
+# Create network stack implementing single Vpc
+
+- name: choose name for cloudformation template file for {{stage}}
+  set_fact: cfn_network_template_name="/tmp/network-{{stage}}-{{ansible_date_time.epoch}}.template"
+  changed_when: False
+
+- name: template locally for cloudformation stack
+  template: src=network.template dest="{{cfn_network_template_name}}"
+  delegate_to: localhost
+  changed_when: False
+
+- name: launch network stack for {{stage_access_name}} to support nginx deployment in region {{aws_region}}
+  cloudformation:
+    profile: "{{aws_account_profile}}"
+    stack_name: "{{stage_access_name}}-networks"
+    state: "present"
+    region: "{{aws_region}}"
+    disable_rollback: True
+    template: "{{cfn_network_template_name}}"
+    template_parameters: 
+      VpcCidr: "{{ngnix_lb_deployment.vpc_cidr}}"
+      Stage: "{{stage}}"
+  register: cfn_network_results
+
+#- name: clean up local copy of {{cfn_network_template_name}} network template
+#  file: path="{{cfn_network_template_name}}" state=absent
+#  delegate_to: localhost
+#  changed_when: False
+

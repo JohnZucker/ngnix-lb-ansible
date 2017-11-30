@@ -1,0 +1,18 @@
+# Invariant assignments common to all roles
+
+# Default to local python 3 executable path
+ansible_python_interpreter: "/usr/local/bin/python"
+
+# Tag keys for all AWS resources
+tag_prefix: "ngnix-lb-example"
+
+# Resource nomenclature
+stage_access_name: "{{tag_prefix}}-{{stage}}"
+iam_role: "{{stage_access_name}}"
+
+# Public DNS
+public_dns_root_domain: "ngnix-lb-example.consecutive-operations.co.uk"
+
+# Ports invariant across all Vpcs for the internal listening port of nginx
+port_nginx: 8080
+
