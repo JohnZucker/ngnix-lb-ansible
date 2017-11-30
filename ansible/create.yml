@@ -9,3 +9,4 @@
     - { role: buckets }
     - { role: security }
     - { role: appinstancegroup }
+    - { role: webloadbalancer }
