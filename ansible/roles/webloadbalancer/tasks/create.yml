@@ -13,6 +13,7 @@
       VPC: "{{network_vpc}}"
       IngressSecurityCIDRRange: "{{network_cidr_for_vpc}}"   # TODO - Lock down tighter to eligible SGs
       Stage: "{{stage}}"
+      ApplicationInstanceASG: "{{application_instances_asg}}"
   register: webloadbalancer_results
 
 - name: set variable application_instances_asg
@@ -34,3 +35,12 @@
 
 - debug:
     msg: "first_webserver_instance is {{ first_webserver_instance }}"
+
+- name: the public IP of the first instance of the webserver_instances_asg group
+  shell:
+    aws ec2 describe-instances --profile ngnix_lb_example --region eu-west-1 \
+    --instance-ids {{ first_webserver_instance }} --query 'Reservations[*].Instances[0].PublicIpAddress'
+  register: first_instance_public_ip
+
+- debug:
+   msg: "first_instance_public_ip is {{ first_instance_public_ip.stdout }}"
