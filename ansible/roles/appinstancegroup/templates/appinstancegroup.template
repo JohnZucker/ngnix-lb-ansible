@@ -161,6 +161,10 @@
         "Ref": "AmazonImageId"
       },
       "Description": "Amazon image id for application instance"
+    },
+    "Stage": {
+      "Description": "The name of this stage",
+      "Value": { "Ref": "Stage" }
     }
   }
 }

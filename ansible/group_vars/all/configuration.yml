@@ -10,6 +10,15 @@ tag_prefix: "ngnix-lb-example"
 stage_access_name: "{{tag_prefix}}-{{stage}}"
 iam_role: "{{stage_access_name}}"
 
+# AMI used for server instances both golang and nginx by region
+# Adopting Amazon Linux as suitable basis: CentOS 7 (x86_64) - with Updates HVM Dec 2017
+image_to_launch:
+  eu-west-1: "ami-5f76b626"
+  eu-west-2: "ami-951201f1"
+  eu-central-1: "ami-2540f74a"
+  us-west-1: "ami-db48ada1"
+  # etc
+
 # Public DNS
 public_dns_root_domain: "ngnix-lb-example.consecutive-operations.co.uk"
 

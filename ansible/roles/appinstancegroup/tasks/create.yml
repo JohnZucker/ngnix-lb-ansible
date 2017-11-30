@@ -7,7 +7,7 @@
     disable_rollback: true
     template: "./roles/appinstancegroup/templates/appinstancegroup.template"
     template_parameters:
-      AmazonImageId: "ami-7abd0209"
+      AmazonImageId: "{{image_to_launch[aws_region]}}"
       PrivateSubnets: "{{network_private_subnets}}"
       InstanceType: "t2.micro"
       VPC: "{{network_vpc}}"
