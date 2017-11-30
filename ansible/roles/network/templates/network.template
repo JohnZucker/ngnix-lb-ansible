@@ -155,6 +155,18 @@
         "{{attributes.name}}"{%- if not loop.last -%},{% endif %}
       {%- endfor %}]]}
     },
+    "PublicSubnets": {
+      "Description": "List of all public subnets in VPC",
+      "Value": { "Fn::Join": [ ", ", [
+      {% for zone in ngnix_lb_deployment.zones -%}
+        { "Ref": "subnetPublic{{zone|upper}}" }{%- if not loop.last -%},{% endif %}
+      {%- endfor %}]]}},
+    "PrivateSubnets": {
+      "Description": "List of all private subnets in VPC",
+      "Value": { "Fn::Join": [ ", ", [
+      {% for zone in ngnix_lb_deployment.zones -%}
+        { "Ref": "subnetPrivate{{zone|upper}}" }{%- if not loop.last -%},{% endif %}
+      {%- endfor %}]]}},
     "Stage": {
       "Description": "The name of this stage",
       "Value": { "Ref": "Stage" }
