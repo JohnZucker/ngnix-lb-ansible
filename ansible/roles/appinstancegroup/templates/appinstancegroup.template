@@ -8,7 +8,6 @@
     "AmazonImageId": {
       "Type": "String",
       "Description": "The id of the AMI used to create each application instance",
-      "Default": "ami-5f76b626",
       "AllowedPattern": "ami-[a-z0-9]*",
       "MinLength": "12",
       "ConstraintDescription": "Must be the id of an AMI available to this account"
