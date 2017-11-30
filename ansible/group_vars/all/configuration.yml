@@ -11,12 +11,12 @@ stage_access_name: "{{tag_prefix}}-{{stage}}"
 iam_role: "{{stage_access_name}}"
 
 # AMI used for server instances both golang and nginx by region
-# Adopting Amazon Linux as suitable basis: CentOS 7 (x86_64) - with Updates HVM Dec 2017
+# Adopting Amazon Linux as suitable basis: Amazon Linux AMI 2017.09.1 (HVM)
 image_to_launch:
-  eu-west-1: "ami-5f76b626"
-  eu-west-2: "ami-951201f1"
-  eu-central-1: "ami-2540f74a"
-  us-west-1: "ami-db48ada1"
+  eu-west-1: "ami-1a962263"
+  eu-west-2: "ami-e7d6c983"
+  eu-central-1: "ami-bf2ba8d0"
+  us-west-1: "ami-55ef662f"
   # etc
 
 # Public DNS

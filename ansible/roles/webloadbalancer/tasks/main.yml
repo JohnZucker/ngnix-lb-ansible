@@ -1,0 +1,9 @@
+# - include: upload_app_configuration.yml
+#  when: stack_state == "present"
+# TODO - When there is time create the up to date configuration to upload e.g. to s3
+
+- import_tasks: create.yml
+  when: stack_state == "present"
+
+- import_tasks: destroy.yml
+  when: stack_state == "absent"

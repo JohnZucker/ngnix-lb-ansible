@@ -1,5 +1,6 @@
-{ "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Create group of application instances in private subnets equipped to run golang application",
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Create group of one ngnix-supporting instances in public subnets and deploy ngnix to the running instance",
   "Parameters": {
     "KeyPairName": {
       "Type": "AWS::EC2::KeyPair::KeyName",
@@ -12,7 +13,7 @@
       "MinLength": "12",
       "ConstraintDescription": "Must be the id of an AMI available to this account"
     },
-    "PrivateSubnets": {
+    "PublicSubnets": {
       "Type": "CommaDelimitedList",
       "Description": "List of subnets in the VPC to which application instances may reside",
       "ConstraintDescription": "Requires list of subnets"
@@ -52,26 +53,21 @@
     "Stage": {
       "Description": "Stage",
       "Type": "String"
-    },
-    "DesiredInstanceCount": {
-      "Description": "The positive number of app instances required in this group",
-      "Type": "Number",
-      "ConstraintDescription": "positive"
     }
   },
   "Resources": {
-    "ApplicationInstanceASG": {
+    "WebserverInstanceASG": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
       "Properties": {
         "VPCZoneIdentifier": {
-          "Ref": "PrivateSubnets"
+          "Ref": "PublicSubnets"
         },
         "LaunchConfigurationName": {
-          "Ref": "ApplicationInstanceLaunchConfig"
+          "Ref": "WebserverInstanceLaunchConfig"
         },
         "MinSize": "1",
-        "MaxSize": { "Ref": "DesiredInstanceCount" },
-        "DesiredCapacity": { "Ref": "DesiredInstanceCount" },
+        "MaxSize": "1",
+        "DesiredCapacity": "1",
         "Tags": [{
           "Key": "Name",
           "PropagateAtLaunch": "true",
@@ -98,14 +94,12 @@
             "IpProtocol": "tcp",
             "FromPort": "22",
             "ToPort": "22",
-            "CidrIp": {
-              "Ref": "IngressSecurityCIDRRange"
-            }
+            "CidrIp": "0.0.0.0/0"
           },
           {
             "IpProtocol": "tcp",
-            "FromPort": "8484",
-            "ToPort": "8484",
+            "FromPort": "8080",
+            "ToPort": "8080",
             "CidrIp": {
               "Ref": "IngressSecurityCIDRRange"
             }
@@ -117,13 +111,13 @@
         }]
       }
     },
-    "ApplicationInstanceLaunchConfig": {
+    "WebserverInstanceLaunchConfig": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Metadata" : {
         "AWS::CloudFormation::Init" : {
           "config" : {
             "packages" : {
-              "yum" : { "golang": [] } } }
+              "yum" : { "nginx": [] } } }
               }
       },
       "Properties": {
@@ -140,32 +134,14 @@
           "Ref": "InstanceType"
         },
 
-        "AssociatePublicIpAddress": "false",
+        "AssociatePublicIpAddress": "true",
         "UserData": {
           "Fn::Base64": {
             "Fn::Join": [
               "", [
                 "#!/bin/bash -e\n",
-                "/opt/aws/bin/cfn-init --stack ", { "Ref" : "AWS::StackId" }, " --region ", { "Ref" : "AWS::Region" }, " --resource ApplicationInstanceLaunchConfig\n",
-                "export GOPATH=/home/ec2-user/\n",
-                "/bin/mkdir $GOPATH/cmd\n",
-                "/bin/echo 'package main' > $GOPATH/cmd/httpapp.go\n",
-                "/bin/echo 'import (' >> $GOPATH/cmd/httpapp.go\n",
-                "/bin/echo '        \"fmt\"' >> $GOPATH/cmd/httpapp.go\n",
-                "/bin/echo '        \"net/http\"' >> $GOPATH/cmd/httpapp.go\n",
-                "/bin/echo '        \"os\"' >> $GOPATH/cmd/httpapp.go\n",
-                "/bin/echo ')' >> $GOPATH/cmd/httpapp.go\n",
-                "/bin/echo 'func handler(w http.ResponseWriter, r *http.Request) {' >> $GOPATH/cmd/httpapp.go\n",
-                "/bin/echo '        h, _ := os.Hostname()' >> $GOPATH/cmd/httpapp.go\n",
-                "/bin/echo '        fmt.Fprintf(w, \"Hi there, I`m served from %s!\", h)' >> $GOPATH/cmd/httpapp.go\n",
-                "/bin/echo '}' >> $GOPATH/cmd/httpapp.go\n",
-                "/bin/echo 'func main() {' >> $GOPATH/cmd/httpapp.go\n",
-                "/bin/echo '        http.HandleFunc(\"/\", handler)' >> $GOPATH/cmd/httpapp.go\n",
-                "/bin/echo '        http.ListenAndServe(\":8484\", nil)' >> $GOPATH/cmd/httpapp.go\n",
-                "/bin/echo '}' >> $GOPATH/cmd/httpapp.go\n",
-                "/usr/bin/go run $GOPATH/cmd/httpapp.go\n",
-                "/bin/echo 'export GOPATH=/home/ec2-user/' > /etc/profile.d/gopath.sh\n",
-                "/bin/chmod 644 /etc/profile.d/gopath.sh\n"
+                 "/opt/aws/bin/cfn-init --stack ", { "Ref" : "AWS::StackId" }, " --region ", { "Ref" : "AWS::Region" }, " --resource WebserverInstanceLaunchConfig\n",
+                 "/sbin/service nginx start\n"
               ]
             ]
           }
@@ -174,9 +150,9 @@
     }
   },
   "Outputs": {
-    "ApplicationInstancesAutoScalingGroupId": {
+    "WebserverInstancesAutoScalingGroupId": {
       "Value": {
-        "Ref": "ApplicationInstanceASG"
+        "Ref": "WebserverInstanceASG"
       },
       "Description": "Auto-scaling-group id for application instance"
     },
@@ -188,7 +164,9 @@
     },
     "Stage": {
       "Description": "The name of this stage",
-      "Value": { "Ref": "Stage" }
+      "Value": {
+        "Ref": "Stage"
+      }
     }
   }
 }

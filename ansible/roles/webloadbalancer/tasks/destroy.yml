@@ -1,0 +1,8 @@
+- name: destroy network cfn stack for {{stage_access_name}}
+  cloudformation:
+    profile: "{{aws_account_profile}}"
+    stack_name: "{{stage_access_name}}-webloadbalancer"
+    state: "absent"
+    region: "{{aws_region}}"
+    disable_rollback: True
+  ignore_errors: True
