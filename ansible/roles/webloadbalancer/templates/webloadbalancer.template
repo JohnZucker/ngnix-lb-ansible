@@ -141,7 +141,10 @@
               "", [
                 "#!/bin/bash -e\n",
                  "/opt/aws/bin/cfn-init --stack ", { "Ref" : "AWS::StackId" }, " --region ", { "Ref" : "AWS::Region" }, " --resource WebserverInstanceLaunchConfig\n",
-                 "/sbin/service nginx start\n"
+                 "/sbin/service nginx start\n",
+                 "# Installing ngnix ASG aware software maintained at https://github.com/nginxinc/nginx-asg-sync\n",
+                 "/usr/bin/wget -O /tmp/nginx-asg-sync-0.1-2.amzn1.x86_64.rpm https://github.com/nginxinc/nginx-asg-sync/releases/download/v0.1-2/nginx-asg-sync-0.1-2.amzn1.x86_64.rpm\n",
+                 "/bin/rpm -i /tmp/nginx-asg-sync-0.1-2.amzn1.x86_64.rpm\n"
               ]
             ]
           }

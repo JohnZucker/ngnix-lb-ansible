@@ -14,3 +14,23 @@
       IngressSecurityCIDRRange: "{{network_cidr_for_vpc}}"   # TODO - Lock down tighter to eligible SGs
       Stage: "{{stage}}"
   register: webloadbalancer_results
+
+- name: set variable application_instances_asg
+  set_fact:
+    webserver_instances_asg="{{webloadbalancer_results.stack_outputs.WebserverInstancesAutoScalingGroupId}}"
+  changed_when: False
+
+# Discover the single instance
+
+- ec2_asg_facts:
+    profile: "{{aws_account_profile}}"
+    region: "{{aws_region}}"
+    name: "{{webserver_instances_asg}}"
+  register: webserver_instances
+
+- name: discover first instance belonging to {{webserver_instances_asg}} by unpacking from list of dict
+  set_fact:
+    first_webserver_instance="{{webserver_instances.results[0]['instances'][0]['instance_id']}}"
+
+- debug:
+    msg: "first_webserver_instance is {{ first_webserver_instance }}"
