@@ -39,8 +39,9 @@
 - name: the public IP of the first instance of the webserver_instances_asg group
   shell:
     aws ec2 describe-instances --profile ngnix_lb_example --region eu-west-1 \
-    --instance-ids {{ first_webserver_instance }} --query 'Reservations[*].Instances[0].PublicIpAddress'
-  register: first_instance_public_ip
+    --instance-ids {{ first_webserver_instance }} --query 'Reservations[*].Instances[0].PublicIpAddress' \
+    --output text
+  register: first_webserver_instance_public_ip
 
 - debug:
-   msg: "first_instance_public_ip is {{ first_instance_public_ip.stdout }}"
+   msg: "first_webserver_instance_public_ip is {{ first_webserver_instance_public_ip.stdout }}"
