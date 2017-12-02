@@ -1,0 +1,3 @@
+# github uses https://github.com/github/linguist to characterize language
+*.yml linguist-language=YAML
+*.yml_ linguist-language=YAML
