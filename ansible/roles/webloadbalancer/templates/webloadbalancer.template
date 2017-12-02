@@ -53,6 +53,10 @@
     "Stage": {
       "Description": "Stage",
       "Type": "String"
+    },
+    "ApplicationInstanceASG": {
+      "Description": "The name of the pre-existing autoscaling group of the application instances responding on 8484",
+      "Type": "String"
     }
   },
   "Resources": {
@@ -141,7 +145,23 @@
               "", [
                 "#!/bin/bash -e\n",
                  "/opt/aws/bin/cfn-init --stack ", { "Ref" : "AWS::StackId" }, " --region ", { "Ref" : "AWS::Region" }, " --resource WebserverInstanceLaunchConfig\n",
-                 "/sbin/service nginx start\n"
+                 "/sbin/service nginx start\n",
+                 "# Installing ngnix ASG aware software maintained at https://github.com/nginxinc/nginx-asg-sync\n",
+                 "/usr/bin/wget -O /tmp/nginx-asg-sync-0.1-2.amzn1.x86_64.rpm https://github.com/nginxinc/nginx-asg-sync/releases/download/v0.1-2/nginx-asg-sync-0.1-2.amzn1.x86_64.rpm\n",
+                 "/bin/rpm -i /tmp/nginx-asg-sync-0.1-2.amzn1.x86_64.rpm\n",
+                 "/bin/echo '# ASG aware software configuration' > /etc/nginx/aws.yaml\n",
+                 "/usr/bin/printf 'region: ' >> /etc/nginx/aws.yaml\n",
+                 "/bin/echo ", { "Ref": "AWS::Region" }, " >> /etc/nginx/aws.yaml\n",
+                 "/bin/echo 'upstream_conf_endpoint: http://127.0.0.1:8080/upstream_conf' >> /etc/nginx/aws.yaml\n",
+                 "/bin/echo 'status_endpoint: http://127.0.0.1:8080/status'  >> /etc/nginx/aws.yaml\n",
+                 "/bin/echo 'sync_interval_in_seconds: 5' >> /etc/nginx/aws.yaml\n",
+                 "/bin/echo 'upstreams:' >> /etc/nginx/aws.yaml\n",
+                 "/bin/echo '   - name: backend_ngnix_lb_example' >> /etc/nginx/aws.yaml\n",
+                 "/usr/bin/printf '     autoscaling_group: ' >> /etc/nginx/aws.yaml\n",
+                 "/bin/echo ", { "Ref": "ApplicationInstanceASG" }, " >> /etc/nginx/aws.yaml\n",
+                 "/bin/echo '     port: 8484' >> /etc/nginx/aws.yaml\n",
+                 "/bin/echo '     kind: http' >> /etc/nginx/aws.yaml\n",
+                 "/usr/sbin/nginx-asg-sync restart\n"
               ]
             ]
           }
@@ -155,6 +175,12 @@
         "Ref": "WebserverInstanceASG"
       },
       "Description": "Auto-scaling-group id for application instance"
+    },
+    "ApplicationInstanceASG": {
+      "Value": {
+        "Ref": "ApplicationInstanceASG"
+      },
+      "Description": "The name of the pre-existing autoscaling group of the application instances responding on 8484"
     },
     "AmazonImageId": {
       "Value": {

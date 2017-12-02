@@ -15,3 +15,8 @@
       Stage: "{{stage}}"
       DesiredInstanceCount: 2
   register: appinstancegroup_results
+
+- name: set variable application_instances_asg
+  set_fact:
+    application_instances_asg="{{appinstancegroup_results.stack_outputs.ApplicationInstancesAutoScalingGroupId}}"
+  changed_when: False
