@@ -3,6 +3,8 @@
   vars:
       stack_state: absent
   roles:
+    - { role: webloadbalancer }
+    - { role: appinstancegroup }
     - { role: security }
     - { role: buckets }
     - { role: network }
