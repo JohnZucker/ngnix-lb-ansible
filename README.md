@@ -1,4 +1,4 @@
-# ngnix-with-lb
+# ngnix-lb
 Deploy a golang sample application to the application nodes and front with a load balanced nginx webserver
 
 ## Tool to deploy a golang sample application to the application nodes and front with a load balanced nginx webserver
